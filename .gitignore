@@ -10,3 +10,6 @@ env/
 .DS_Store
 .idea/
 .vscode/
+
+# Copilot OAuth token cached by github_auth.CopilotAuth — never commit
+.copilot_token.json

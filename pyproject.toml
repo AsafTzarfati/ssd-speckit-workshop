@@ -8,6 +8,7 @@ dependencies = [
     # Note: the package distributed by that repo is named `sim` (not `sim-drone`).
     "sim @ git+https://github.com/AsafTzarfati/ssd-workshop-sim-drone.git@main",
     "websockets>=12.0",
+    "requests>=2.31",
 ]
 
 [project.optional-dependencies]

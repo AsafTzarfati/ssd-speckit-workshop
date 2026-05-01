@@ -69,6 +69,16 @@ def main() -> None:
         fail("Sim boots and emits valid telemetry", f"Sim probe failed: {e}")
     print("✓ Sim boots and emits valid telemetry")
 
+    if importlib.util.find_spec("requests") is None:
+        fail("Copilot auth module ready", 'Run: pip install -e ".[dev]"')
+    try:
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+        from github_auth import CopilotAuth  # noqa: F401
+    except Exception as e:
+        fail("Copilot auth module ready", f"Could not import github_auth: {e}")
+    print("✓ Copilot auth module ready")
+
     print("✓ All checks passed — see you at the workshop")
 
 

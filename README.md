@@ -26,7 +26,25 @@ cd ssd-speckit-workshop
 pip install -e ".[dev]"
 ```
 
-### 3. Verify your setup
+### 3. Log in to GitHub Copilot
+The Watchdog you'll build calls the GitHub Copilot API directly. You need
+to authorize this repo against your Copilot account **once**. The OAuth
+token is saved locally to `.copilot_token.json` (gitignored) so you won't
+be prompted again.
+
+```bash
+make login
+```
+
+You'll be shown a code and a URL. Open the URL in your browser, paste the
+code, and approve. When you see `Logged in as <your-github-handle>` you're
+done.
+
+> Requires an active GitHub Copilot subscription (Individual, Business, or
+> Enterprise). If you already have `GITHUB_TOKEN` set in your environment
+> with `read:user` scope, that's used automatically and `make login` is a no-op.
+
+### 4. Verify your setup
 ```bash
 make verify
 ```
@@ -36,6 +54,7 @@ You should see:
 ✓ Python 3.11+
 ✓ Sim package installed
 ✓ Sim boots and emits valid telemetry
+✓ Copilot auth module ready
 ✓ All checks passed — see you at the workshop
 ```
 

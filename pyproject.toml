@@ -1,0 +1,27 @@
+[project]
+name = "workshop-speckit"
+version = "0.1.0"
+description = "Spec-Driven Development workshop — student scaffolding"
+requires-python = ">=3.11"
+dependencies = [
+    # TODO: pin to a tag (e.g. @v1.0.0) once one exists in ssd-workshop-sim-drone.
+    # Note: the package distributed by that repo is named `sim` (not `sim-drone`).
+    "sim @ git+https://github.com/AsafTzarfati/ssd-workshop-sim-drone.git@main",
+    "websockets>=12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = []
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

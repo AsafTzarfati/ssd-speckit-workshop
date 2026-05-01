@@ -60,6 +60,23 @@ You should see:
 
 If any check fails, please ping the workshop channel before the day-of.
 
+## Submission contract
+
+Your Watchdog discovers up to 5 hidden patterns in the telemetry stream and
+posts its findings to the workshop leaderboard. The submission body must
+match [`specs/submission_schema.json`](specs/submission_schema.json) — every
+team's agent emits the same shape so grading is fair across runs.
+
+Each pattern gets its own object inside `answer.pattern_N`. Numeric/structural
+fields (bounding box, lag in samples, decoded message, etc.) are graded
+deterministically with tolerance bands. Each pattern also takes a free-text
+`label`; the leaderboard normalizes it and matches against an alias dictionary,
+so descriptions like "Israeli flag", "Star of David", or "hexagram" all score
+the same as long as your structural fields are correct.
+
+Partial credit is awarded per pattern — submit what you've solved, skip what
+you haven't.
+
 ## During the workshop
 
 You'll write the **Constitution**, **Spec**, **Plan**, and **Tasks** together

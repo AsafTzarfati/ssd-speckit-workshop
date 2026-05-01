@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/AsafTzarfati/ssd-speckit-workshop/specs/submission_schema.json",
+  "title": "Drone Watchdog Submission",
+  "description": "Schema for the JSON body POSTed to the leaderboard's /submit endpoint. Every student agent MUST produce an `answer` object that conforms to this schema. The leaderboard grades on the structural fields (numbers, sequences, fixed strings) — those are language-independent. Each pattern also accepts a free-text `label` field; the leaderboard normalizes it and matches against an alias dictionary, falling back to an LLM judge if configured. So you can describe Pattern 1 as 'Israeli flag' OR 'Star of David' OR 'hexagram' — they all score the same as long as your structural fields are correct.",
+  "type": "object",
+  "required": ["name", "department", "answer"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "department": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "answer": {
+      "type": "object",
+      "description": "Findings for each of the 5 hidden patterns. Submit as many as you've solved — partial credit is awarded per pattern.",
+      "additionalProperties": false,
+      "properties": {
+        "pattern_1": { "$ref": "#/$defs/pattern_1" },
+        "pattern_2": { "$ref": "#/$defs/pattern_2" },
+        "pattern_3": { "$ref": "#/$defs/pattern_3" },
+        "pattern_4": { "$ref": "#/$defs/pattern_4" },
+        "pattern_5": { "$ref": "#/$defs/pattern_5" }
+      }
+    }
+  },
+  "$defs": {
+    "pattern_1": {
+      "type": "object",
+      "title": "Pattern 1 — Geospatial path",
+      "description": "When you plot lat vs lon over the full flight, the trace forms a recognisable shape. Report the bounding box in metres, the geographic centre, the visual components you identified, and a free-text label.",
+      "additionalProperties": true,
+      "properties": {
+        "label": { "type": "string", "description": "Free text. Examples that all score full label credit: 'Israeli flag', 'Flag of Israel', 'Star of David', 'hexagram', 'Magen David'." },
+        "bbox_width_m": { "type": "number", "description": "Longitudinal extent of the path in metres (max_lon − min_lon, converted to metres at this latitude)." },
+        "bbox_height_m": { "type": "number", "description": "Latitudinal extent of the path in metres." },
+        "center_lat": { "type": "number" },
+        "center_lon": { "type": "number" },
+        "components": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Visual sub-shapes you detected. Use lowercase tokens. Expected: ['stripes', 'hexagram']."
+        }
+      }
+    },
+    "pattern_2": {
+      "type": "object",
+      "title": "Pattern 2 — Replay of a real event",
+      "description": "One scenario's altitude profile mimics a famous descent, with a programmed mode change and an injected anomaly that mirror landmarks of the original event.",
+      "additionalProperties": true,
+      "properties": {
+        "label": { "type": "string", "description": "Free text. E.g. 'Apollo 11 descent', 'Eagle landing', 'lunar landing'." },
+        "peak_altitude_m": { "type": "number", "description": "Maximum altitude reached (metres)." },
+        "manual_takeover_seq": { "type": "integer", "description": "Sample seq at which flight_mode flips to MANUAL." },
+        "alarm_event_seq": { "type": "integer", "description": "Sample seq of the famous alarm/anomaly (the equivalent of the 1202 program alarm)." }
+      }
+    },
+    "pattern_3": {
+      "type": "object",
+      "title": "Pattern 3 — Temporal cadence of anomalies",
+      "description": "Anomalies don't fire at random — the gaps between them follow a famous integer sequence.",
+      "additionalProperties": true,
+      "properties": {
+        "label": { "type": "string", "description": "Free text. E.g. 'Fibonacci', 'Fibonacci sequence', 'fib'." },
+        "interval_seconds": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Gaps in seconds between consecutive anomaly events. Expected: [1, 1, 2, 3, 5, 8, 13, 21]."
+        },
+        "anomaly_seqs": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "description": "Sample seq of each anomaly. At 10 Hz, expected: [10, 20, 40, 70, 120, 200, 330, 540]."
+        }
+      }
+    },
+    "pattern_4": {
+      "type": "object",
+      "title": "Pattern 4 — Cross-channel correlation",
+      "description": "One telemetry channel is a lagged, scaled echo of another. Identify the source, the target, the lag in samples, and the gain.",
+      "additionalProperties": true,
+      "properties": {
+        "label": { "type": "string", "description": "Free text. E.g. 'lagged correlation', 'thermal lag', 'cross-correlation echo'." },
+        "source_field": { "type": "string", "description": "The driving telemetry field (e.g., 'current_a')." },
+        "target_field": { "type": "string", "description": "The lagged-echo field (e.g., 'motor_temp_c[0]')." },
+        "lag_samples": { "type": "integer", "description": "Lag at which cross-correlation peaks." },
+        "gain": { "type": "number", "description": "Linear scaling factor: target ≈ const + gain · source[seq − lag]." }
+      }
+    },
+    "pattern_5": {
+      "type": "object",
+      "title": "Pattern 5 — Encoded message",
+      "description": "A short ASCII message is hidden inside one telemetry field, made visible only during a specific flight mode. Recover the decoded text.",
+      "additionalProperties": true,
+      "properties": {
+        "label": { "type": "string", "description": "Free text. E.g. 'ASCII in MAINT', 'hidden message', 'covert channel'." },
+        "decoded_message": { "type": "string", "description": "The recovered ASCII string. Expected: 'HELLO COPILOT' (case- and whitespace-insensitive)." },
+        "carrier_field": { "type": "string", "description": "Which telemetry field carries the encoded bytes." },
+        "active_mode": { "type": "string", "description": "Flight mode during which the encoding is active (e.g., 'MAINT')." },
+        "window_samples": { "type": "integer", "description": "Number of samples each character occupies." },
+        "period_s": { "type": "number", "description": "Period in seconds between successive encoding windows." }
+      }
+    }
+  }
+}

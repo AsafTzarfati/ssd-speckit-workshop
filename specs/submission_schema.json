@@ -13,12 +13,18 @@
       "type": "object",
       "description": "Findings for each of the 5 hidden patterns. Submit as many as you've solved — partial credit is awarded per pattern.",
       "additionalProperties": false,
+      "required": ["telemetry_window_sha256"],
       "properties": {
         "pattern_1": { "$ref": "#/$defs/pattern_1" },
         "pattern_2": { "$ref": "#/$defs/pattern_2" },
         "pattern_3": { "$ref": "#/$defs/pattern_3" },
         "pattern_4": { "$ref": "#/$defs/pattern_4" },
-        "pattern_5": { "$ref": "#/$defs/pattern_5" }
+        "pattern_5": { "$ref": "#/$defs/pattern_5" },
+        "telemetry_window_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 of the most recent 100-sample telemetry window. Read the field of the same name from any frame your agent received over the WebSocket once it has consumed at least 100 samples; copy it here. The leaderboard rejects submissions whose SHA the sim never emitted (with the workshop default seed=42 / rate=10 config)."
+        }
       }
     }
   },

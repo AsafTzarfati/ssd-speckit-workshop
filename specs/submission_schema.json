@@ -54,7 +54,7 @@
       "properties": {
         "label": { "type": "string", "description": "Free text. E.g. 'Apollo 11 descent', 'Eagle landing', 'lunar landing'." },
         "peak_altitude_m": { "type": "number", "description": "Maximum altitude reached (metres)." },
-        "manual_takeover_seq": { "type": "integer", "description": "Sample seq at which flight_mode flips to MANUAL." },
+        "manual_takeover_seq": { "type": ["integer", "null"], "description": "Sample seq at which flight_mode flips to MANUAL. Null is accepted for short captures that didn't reach seq=1100." },
         "alarm_event_seq": { "type": "integer", "description": "Sample seq of the famous alarm/anomaly (the equivalent of the 1202 program alarm)." }
       }
     },

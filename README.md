@@ -172,6 +172,42 @@ Things the framework gives you for free that the spec should leverage:
 **streaming**, **checkpointing** (so a long capture isn't lost on a crash),
 and **human-in-the-loop** (confirm a borderline label before submitting).
 
+A worked example of the full agent path — capture, agent invocation,
+schema validation — lives in
+[`scripts/run_watchdog.py`](scripts/run_watchdog.py). Run it after
+`make login`:
+
+```bash
+python scripts/run_watchdog.py --list-models       # see what your account supports
+python scripts/run_watchdog.py --model gpt-5.2     # run end-to-end
+```
+
+### Common errors
+
+Four ways the agent will silently misbehave if you're not paying attention:
+
+1. **`400 The requested model is not supported`** — your Copilot
+   subscription doesn't grant the model you asked for. The default in
+   the skeleton is `gpt-5.2`. Override with `--model …` or
+   `GITHUB_COPILOT_MODEL=…`. Note that `client.list_models()` shows
+   `policy.state == 'enabled'` for models the API may still reject;
+   `enabled` is necessary but not sufficient. Try a few.
+2. **Tool returns `Permission denied and could not request permission
+   from user`** — the SDK's default `on_permission_request` denies
+   every request. The skeleton ships an `_allow_all` handler; if you
+   strip it or write your own, remember to return
+   `PermissionRequestResult(kind="approved")` for the calls you want
+   to permit.
+3. **Capture ends after ~120 frames at rate=10** — the `comm_loss`
+   anomaly suppresses 5 seconds of frames. If your read-loop's recv
+   timeout is `<= 5s` it'll quit mid-cycle. `scripts/capture.py` uses
+   10s; if you write your own loop, do at least the same.
+4. **Schema rejects `manual_takeover_seq: null`** — the field accepts
+   `integer | null`, but if you build the JSON by hand make sure not
+   to emit a stray Python `None` that serializes to a different shape
+   (e.g. JS `undefined` from a TypeScript port). Omitting the key
+   entirely is also valid.
+
 ## What NOT to do
 
 - **Don't read the simulator's source code.** The sim is a black-box dependency.

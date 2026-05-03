@@ -81,10 +81,12 @@ leaderboard normalizes it and matches against an alias dictionary, so
 descriptions like "Israeli flag", "Star of David", or "hexagram" all score
 the same as long as your structural fields are correct.
 
-> **Tip — Pattern 1 is a visual shape.** Plot lat vs lon over the full
-> flight and look at the trace before you try to label it. The
-> `components` field expects lowercase tokens for the sub-shapes you
-> see (e.g. `stripes`, `hexagram`).
+> **Tip — Pattern 1 is a visual shape.** The sim emits a *merged stream*:
+> each frame carries 4 nested per-scenario sub-objects (`apollo11`, `flag`,
+> `heart`, `wright`). Plot lat vs lon for each sub-object — only one
+> traces a recognizable pattern; the other three are decoys. Look at the
+> trace before you try to label it. The `components` field expects
+> lowercase tokens for the sub-shapes you see (e.g. `stripes`, `hexagram`).
 
 Partial credit is awarded per pattern — submit what you've solved, skip what
 you haven't.
@@ -97,9 +99,26 @@ each diff before it's merged.
 
 ### Capturing telemetry
 
-Each scenario in the sim is **finite** — the simulator emits a fixed
-number of frames, then closes the websocket with `1001 going away`.
-A naive read loop will crash on that. Use the helper we ship instead:
+The sim emits a **merged telemetry stream** — every WebSocket frame
+contains all 4 internal scenarios at once, nested under per-scenario
+keys:
+
+```json
+{
+  "drone_id": "uav-01", "seq": 137, "ts": 1714.7,
+  "apollo11": { "altitude_m": 134.0, "lat": ..., "flight_mode": "AUTO", ... },
+  "flag":     { "altitude_m": 60.0,  "lat": ..., "flight_mode": "AUTO", ... },
+  "heart":    { ... },
+  "wright":   { ... },
+  "window_sha256": "865c90e2..."
+}
+```
+
+Two of the four sub-objects (`heart`, `wright`) are decoys; figuring out
+which sub-object hosts each pattern is part of the workshop. The merged
+stream is **finite** (120s @ 10Hz = 1200 frames) and the simulator
+closes the websocket with `1001 going away` at the end. A naive read
+loop will crash on that. Use the helper we ship instead:
 
 ```bash
 python scripts/capture.py --out telemetry.jsonl
@@ -130,8 +149,9 @@ auth = CopilotAuth()  # already logged in via `make login`
 # 1. Define Tools — pure analytical functions over the captured frames.
 #    The `@tool` decorator wraps the function as a FunctionTool the agent
 #    can call. Use `Annotated[..., "doc"]` to document parameters.
+#    Frames are nested per-scenario: f["flag"]["lat"], f["apollo11"]["altitude_m"], …
 @tool(name="detect_geospatial_shape",
-      description="Plot lat/lon, return bbox + components.")
+      description="Plot lat/lon for each sub-object, return bbox + components.")
 def detect_geospatial_shape(frames: list[dict]) -> dict: ...
 
 # 2. Two ways to call a tool:

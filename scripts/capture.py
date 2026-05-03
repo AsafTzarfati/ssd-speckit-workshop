@@ -58,7 +58,10 @@ async def capture(out_path: Path, port: int, rate: str) -> None:
                 try:
                     while True:
                         try:
-                            msg = await asyncio.wait_for(ws.recv(), timeout=5.0)
+                            # 10s timeout so the 5s `comm_loss` anomaly gap
+                            # (50 suppressed frames at canonical rate=10) doesn't
+                            # falsely end the capture mid-cycle.
+                            msg = await asyncio.wait_for(ws.recv(), timeout=10.0)
                         except ConnectionClosed:
                             break
                         f.write(msg + "\n")

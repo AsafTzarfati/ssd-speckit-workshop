@@ -20,8 +20,7 @@ Pattern → sub-object map (your job to verify, not blindly trust):
   - Pattern 4 (cross-channel lag):    f["apollo11"]["current_a"] → f["apollo11"]["motor_temp_c"][0]
   - heart, wright: decoys — present every frame, never the answer.
 
-Demonstrates the two things students will get wrong without a starting
-point:
+Demonstrates the things students will get wrong without a starting point:
 
 1. The decorator is `@tool` (NOT `@ai_function` or `@Tool`).
 2. There are two ways to call a FunctionTool:
@@ -29,6 +28,10 @@ point:
    - via the agent — `await my_tool.invoke(arguments={"frames": frames})`
    The first is what your unit tests should use; the second is what runs
    when the agent decides to call the tool.
+3. The default `on_permission_request` denies every tool call silently.
+   You MUST pass an approving handler — see `make_agent()` below.
+4. The default model may not be enabled on your Copilot subscription. Pass
+   `--model gpt-5.2` (or whichever `client.list_models()` shows) to choose.
 
 Run end-to-end after producing telemetry.jsonl with scripts/capture.py:
 
@@ -39,6 +42,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import sys
 from collections import Counter
 from pathlib import Path
@@ -46,6 +50,7 @@ from typing import Annotated
 
 from agent_framework import tool
 from agent_framework_github_copilot import GitHubCopilotAgent
+from copilot.session import PermissionRequestResult
 
 
 def load(path: str) -> list[dict]:
@@ -124,13 +129,34 @@ WATCHDOG_TOOLS = [
 ]
 
 
-def make_agent() -> GitHubCopilotAgent:
+def _allow_all(_request, _invocation) -> PermissionRequestResult:
+    """Approve every tool-call permission request.
+
+    The Copilot SDK defaults to denying every request silently — tool
+    results come back as 'Permission denied and could not request
+    permission from user'. Workshop tools are pure read-only analysis,
+    so allow-all is safe here. If you add tools that touch the
+    filesystem or network, narrow this handler accordingly.
+    """
+    return PermissionRequestResult(kind="approved")
+
+
+def make_agent(model: str | None = None) -> GitHubCopilotAgent:
     """Construct the Copilot-backed agent with the tools attached.
 
     GitHubCopilotAgent picks up auth from the Copilot SDK environment.
     See `github_auth.CopilotAuth` for the device-flow login the workshop
     uses to populate that environment.
+
+    Pass `model` to pin a specific Copilot model. Falls back to the
+    GITHUB_COPILOT_MODEL environment variable, then to "gpt-5.2" (a
+    sensible default that's enabled on most subscriptions).
+
+    Use `copilot.CopilotClient.list_models()` to see what's available
+    on your account — note that `policy.state == 'enabled'` does NOT
+    guarantee the model is reachable, so try a few if one fails.
     """
+    chosen_model = model or os.environ.get("GITHUB_COPILOT_MODEL") or "gpt-5.2"
     return GitHubCopilotAgent(
         name="DroneWatchdog",
         instructions=(
@@ -140,6 +166,11 @@ def make_agent() -> GitHubCopilotAgent:
             "`answer` object matching specs/submission_schema.json."
         ),
         tools=WATCHDOG_TOOLS,
+        default_options={
+            "model": chosen_model,
+            "timeout": 180,
+            "on_permission_request": _allow_all,
+        },
     )
 
 

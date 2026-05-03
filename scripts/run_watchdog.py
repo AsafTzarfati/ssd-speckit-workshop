@@ -390,18 +390,28 @@ async def run_watchdog(jsonl_path: Path, model: str | None) -> None:
 
     answer = _extract_json(text)
 
-    # Validate against the leaderboard schema.
+    # Validate the `answer` block against the leaderboard schema. Students
+    # paste only the `answer` JSON into the leaderboard's web app, which
+    # collects name/department via form fields and assembles the final POST
+    # body. The validator below wraps `answer` with stubbed name/department
+    # for schema-compliance reasons only — those stubs are NOT part of the
+    # runner's output.
     schema = json.loads(SCHEMA_PATH.read_text())
-    body = {"name": "Asaf Tzarfati", "department": "Engineering", "answer": answer}
-    errors = list(Draft202012Validator(schema).iter_errors(body))
+    stub_body = {"name": "_validator_stub", "department": "_validator_stub", "answer": answer}
+    errors = [
+        e for e in Draft202012Validator(schema).iter_errors(stub_body)
+        # Filter out errors against the stubbed wrapper fields (the web app
+        # will fill those in).
+        if not (e.absolute_path and list(e.absolute_path)[0] in ("name", "department"))
+    ]
     if errors:
         print("\n[runner] SCHEMA ERRORS:", file=sys.stderr)
         for e in errors:
             print(f"  - {e.message} at {list(e.absolute_path)}", file=sys.stderr)
     else:
-        print("\n[runner] schema OK", file=sys.stderr)
+        print("\n[runner] answer schema OK", file=sys.stderr)
 
-    print("\n=== FINAL ANSWER ===")
+    print("\n=== ANSWER (paste this into the leaderboard web app) ===")
     print(json.dumps(answer, indent=2))
 
 

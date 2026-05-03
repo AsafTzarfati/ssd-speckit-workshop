@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/AsafTzarfati/ssd-speckit-workshop/specs/submission_schema.json",
   "title": "Drone Watchdog Submission",
-  "description": "Schema for the JSON body POSTed to the leaderboard's /submit endpoint. Every student agent MUST produce an `answer` object that conforms to this schema. The leaderboard grades on the structural fields (numbers, sequences, fixed strings) — those are language-independent. Each pattern also accepts a free-text `label` field; the leaderboard normalizes it and matches against an alias dictionary, falling back to an LLM judge if configured. So you can describe Pattern 1 as 'Israeli flag' OR 'Star of David' OR 'hexagram' — they all score the same as long as your structural fields are correct.",
+  "description": "Schema for the JSON body POSTed to the leaderboard's /submit endpoint. Every student agent MUST produce an `answer` object that conforms to this schema. The leaderboard grades on the structural fields (numbers, sequences, fixed strings) — those are language-independent. Each pattern also accepts a free-text `label` field; the leaderboard normalizes it and matches against an alias dictionary, falling back to an LLM judge if configured. So you can describe Pattern 1 as 'Israeli flag' OR 'Star of David' OR 'hexagram' — they all score the same as long as your structural fields are correct. Submit findings for up to 4 hidden patterns.",
   "type": "object",
   "required": ["name", "department", "answer"],
   "additionalProperties": false,
@@ -11,7 +11,7 @@
     "department": { "type": "string", "minLength": 1, "maxLength": 80 },
     "answer": {
       "type": "object",
-      "description": "Findings for each of the 5 hidden patterns. Submit as many as you've solved — partial credit is awarded per pattern.",
+      "description": "Findings for each of the up to 4 hidden patterns. Submit as many as you've solved — partial credit is awarded per pattern.",
       "additionalProperties": false,
       "required": ["telemetry_window_sha256"],
       "properties": {
@@ -19,7 +19,6 @@
         "pattern_2": { "$ref": "#/$defs/pattern_2" },
         "pattern_3": { "$ref": "#/$defs/pattern_3" },
         "pattern_4": { "$ref": "#/$defs/pattern_4" },
-        "pattern_5": { "$ref": "#/$defs/pattern_5" },
         "telemetry_window_sha256": {
           "type": "string",
           "pattern": "^[a-f0-9]{64}$",
@@ -89,20 +88,6 @@
         "target_field": { "type": "string", "description": "The lagged-echo field (e.g., 'motor_temp_c[0]')." },
         "lag_samples": { "type": "integer", "description": "Lag at which cross-correlation peaks." },
         "gain": { "type": "number", "description": "Linear scaling factor: target ≈ const + gain · source[seq − lag]." }
-      }
-    },
-    "pattern_5": {
-      "type": "object",
-      "title": "Pattern 5 — Encoded message",
-      "description": "A short ASCII message is hidden inside one telemetry field, made visible only during a specific flight mode. Recover the decoded text.",
-      "additionalProperties": true,
-      "properties": {
-        "label": { "type": "string", "description": "Free text. E.g. 'ASCII in MAINT', 'hidden message', 'covert channel'." },
-        "decoded_message": { "type": "string", "description": "The recovered ASCII string. Expected: 'HELLO COPILOT' (case- and whitespace-insensitive)." },
-        "carrier_field": { "type": "string", "description": "Which telemetry field carries the encoded bytes." },
-        "active_mode": { "type": "string", "description": "Flight mode during which the encoding is active (e.g., 'MAINT')." },
-        "window_samples": { "type": "integer", "description": "Number of samples each character occupies." },
-        "period_s": { "type": "number", "description": "Period in seconds between successive encoding windows." }
       }
     }
   }

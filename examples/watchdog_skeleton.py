@@ -1,6 +1,27 @@
 """Watchdog skeleton — copy this into your repo and grow it under your spec.
 
-Demonstrates the two things students will get wrong without a starting point:
+The sim emits a *merged* telemetry stream: every frame carries all 4
+scenarios at once, nested under per-scenario keys. Each sub-object holds
+its own altitude, lat/lon, current, motor temps, flight_mode etc.
+
+  frame = {
+      "drone_id": "uav-01", "seq": 137, "ts": 1714.7,
+      "apollo11": { "altitude_m": ..., "lat": ..., "flight_mode": ..., ... },
+      "flag":     { "altitude_m": ..., "lat": ..., "flight_mode": ..., ... },
+      "heart":    { ... },
+      "wright":   { ... },
+      "window_sha256": "..."
+  }
+
+Pattern → sub-object map (your job to verify, not blindly trust):
+  - Pattern 1 (geospatial shape):     f["flag"]["lat"], f["flag"]["lon"]
+  - Pattern 2 (Apollo descent):       f["apollo11"]["altitude_m"], ["flight_mode"], ["current_a"]
+  - Pattern 3 (Fibonacci anomalies):  anomaly markers under f["flag"]
+  - Pattern 4 (cross-channel lag):    f["apollo11"]["current_a"] → f["apollo11"]["motor_temp_c"][0]
+  - heart, wright: decoys — present every frame, never the answer.
+
+Demonstrates the two things students will get wrong without a starting
+point:
 
 1. The decorator is `@tool` (NOT `@ai_function` or `@Tool`).
 2. There are two ways to call a FunctionTool:
@@ -34,13 +55,13 @@ def load(path: str) -> list[dict]:
 
 @tool(
     name="detect_geospatial_shape",
-    description="Plot lat vs lon, return bbox in metres + visible components.",
+    description="Plot lat vs lon (from the flag sub-object), return bbox in metres + visible components.",
 )
 def detect_geospatial_shape(
-    frames: Annotated[list[dict], "Captured telemetry frames."],
+    frames: Annotated[list[dict], "Captured merged-stream telemetry frames."],
 ) -> dict:
-    lats = [f["lat"] for f in frames]
-    lons = [f["lon"] for f in frames]
+    lats = [f["flag"]["lat"] for f in frames]
+    lons = [f["flag"]["lon"] for f in frames]
     lat_c = (max(lats) + min(lats)) / 2
     h = (max(lats) - min(lats)) * 111_320
     w = (max(lons) - min(lons)) * 111_320 * math.cos(math.radians(lat_c))
@@ -57,25 +78,25 @@ def detect_geospatial_shape(
 
 @tool(
     name="detect_altitude_replay",
-    description="Find peak altitude and the seq at which flight_mode flips to MANUAL.",
+    description="Find peak altitude and the seq at which apollo11.flight_mode flips to MANUAL.",
 )
 def detect_altitude_replay(frames: list[dict]) -> dict:
-    peak = max(frames, key=lambda f: f["altitude_m"])
+    peak = max(frames, key=lambda f: f["apollo11"]["altitude_m"])
     manual_seq = next(
-        (f["seq"] for f in frames if f["flight_mode"] == "MANUAL"), None
+        (f["seq"] for f in frames if f["apollo11"]["flight_mode"] == "MANUAL"), None
     )
     return {
         "label": "TODO",
-        "peak_altitude_m": round(peak["altitude_m"], 1),
+        "peak_altitude_m": round(peak["apollo11"]["altitude_m"], 1),
         "manual_takeover_seq": manual_seq,
         "alarm_event_seq": None,
-        "modes_seen": dict(Counter(f["flight_mode"] for f in frames)),
+        "modes_seen": dict(Counter(f["apollo11"]["flight_mode"] for f in frames)),
     }
 
 
 @tool(
     name="detect_anomaly_cadence",
-    description="Find anomalies and report the inter-anomaly seq gaps.",
+    description="Find anomalies (in the flag sub-object) and report the inter-anomaly seq gaps.",
 )
 def detect_anomaly_cadence(frames: list[dict]) -> dict:
     return {"label": "TODO", "anomaly_seqs": [], "interval_seconds": []}
@@ -83,13 +104,13 @@ def detect_anomaly_cadence(frames: list[dict]) -> dict:
 
 @tool(
     name="detect_cross_channel_lag",
-    description="Find lag where one channel becomes a scaled echo of another.",
+    description="Find lag where apollo11.motor_temp_c[0] is a scaled echo of apollo11.current_a.",
 )
 def detect_cross_channel_lag(frames: list[dict]) -> dict:
     return {
         "label": "TODO",
-        "source_field": "current_a",
-        "target_field": "motor_temp_c[0]",
+        "source_field": "apollo11.current_a",
+        "target_field": "apollo11.motor_temp_c[0]",
         "lag_samples": 0,
         "gain": 0.0,
     }
@@ -113,9 +134,10 @@ def make_agent() -> GitHubCopilotAgent:
     return GitHubCopilotAgent(
         name="DroneWatchdog",
         instructions=(
-            "You are the Drone Watchdog. Given captured drone telemetry, "
-            "call each pattern-detection tool and assemble an `answer` "
-            "object matching specs/submission_schema.json."
+            "You are the Drone Watchdog. Given captured drone telemetry "
+            "(merged stream — each frame nests apollo11/flag/heart/wright "
+            "sub-objects), call each pattern-detection tool and assemble an "
+            "`answer` object matching specs/submission_schema.json."
         ),
         tools=WATCHDOG_TOOLS,
     )

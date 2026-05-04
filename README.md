@@ -116,9 +116,20 @@ If any check fails, please ping the workshop channel before the day-of.
 ## Submission contract
 
 Your Watchdog discovers up to 4 hidden patterns in the telemetry stream and
-posts its findings to the workshop leaderboard. The submission body must
-match [`specs/submission_schema.json`](specs/submission_schema.json) — every
-team's agent emits the same shape so grading is fair across runs.
+submits its findings to the workshop leaderboard:
+
+**[https://asaftzarfati.github.io/sdd-workshop-leaderboard/](https://asaftzarfati.github.io/sdd-workshop-leaderboard/)**
+
+The leaderboard's form collects your **name** and **department** as separate
+fields, then accepts the `answer` JSON two ways — pick whichever fits your
+runtime:
+
+- **Upload `answer.json`** — write the `answer` object to a file and upload it.
+- **Paste the JSON** — copy the `answer` object and paste it into the textarea.
+
+Either way the body must match
+[`specs/submission_schema.json`](specs/submission_schema.json) — every team's
+agent emits the same shape so grading is fair across runs.
 
 Each pattern gets its own object inside `answer.pattern_N`. Numeric/structural
 fields are graded deterministically with tolerance bands. Each pattern also

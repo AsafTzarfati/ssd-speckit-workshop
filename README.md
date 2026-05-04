@@ -15,8 +15,13 @@ the day, you'll lose the first 30 minutes of the session.
 ### 1. Tools you need
 - **Python 3.11 or newer** — check with `python --version`
 - **Git**
-- IDE with the GitHub Copilot extension installed
+- **VS Code** with the GitHub Copilot extension installed (Cursor also works,
+  but the install steps below are written against VS Code)
 - **GitHub Copilot** subscription with **agent mode** enabled
+- **`uv`** — used to install the SpecKit CLI in step 3.
+  Install with `curl -LsSf https://astral.sh/uv/install.sh | sh`
+  (see [uv docs](https://docs.astral.sh/uv/getting-started/installation/) for
+  Windows/alternatives). Verify with `uv --version`.
 - A working terminal — Linux or macOS
 
 ### 2. Clone and install
@@ -33,7 +38,47 @@ discovery of patterns via a `Workflow`. See the
 [agent-framework docs](https://github.com/microsoft/agent-framework) for the
 `Agent` / `Tool` / `Workflow` abstractions.
 
-### 3. Log in to GitHub Copilot
+### 3. Install GitHub SpecKit and register its slash commands
+The workshop is built around [GitHub SpecKit](https://github.com/github/spec-kit)'s
+spec-driven flow: you write a constitution, a spec, a plan, and a task list, and
+Copilot's agent mode generates the code. SpecKit ships these as `/speckit.*` slash
+commands inside Copilot Chat. You install the CLI **once** and initialize it
+**per repo**.
+
+#### a. Install the Specify CLI globally
+```bash
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+specify version    # prints the installed version
+specify check      # confirms uv + git + a supported AI integration are reachable
+```
+
+> If you already use `pipx`, `pipx install git+https://github.com/github/spec-kit.git`
+> works too. Either way the `specify` command lands on your `PATH`.
+
+#### b. Initialize SpecKit inside this repo (first-time only)
+From the cloned `ssd-speckit-workshop/` directory:
+```bash
+specify init . --integration copilot
+```
+
+This drops the SpecKit prompt templates and slash-command definitions into the
+repo so Copilot Chat picks them up. Re-running it is idempotent; you only need
+to do this once per fresh clone.
+
+#### c. Verify the slash commands are reachable from Copilot Chat
+1. Open the repo in **VS Code**.
+2. Open the Copilot Chat panel (`⌃⌘I` on macOS / `Ctrl+Alt+I` on Windows-Linux).
+3. Type `/speckit.` — you should see autocomplete entries for
+   `/speckit.constitution`, `/speckit.specify`, `/speckit.plan`,
+   `/speckit.tasks`, `/speckit.implement`.
+
+If the commands don't appear, reload the VS Code window (`⌘⇧P` →
+*Developer: Reload Window*) so the Copilot extension re-scans the repo's
+prompt files. If they still don't appear, re-run `specify init . --integration
+copilot` and check that `.github/prompts/` (or the equivalent SpecKit drops on
+your machine) is present.
+
+### 4. Log in to GitHub Copilot
 The Watchdog you'll build calls the GitHub Copilot API directly. You need
 to authorize this repo against your Copilot account **once**. The OAuth
 token is saved locally to `.copilot_token.json` (gitignored) so you won't
@@ -51,7 +96,7 @@ done.
 > Enterprise). If you already have `GITHUB_TOKEN` set in your environment
 > with `read:user` scope, that's used automatically and `make login` is a no-op.
 
-### 4. Verify your setup
+### 5. Verify your setup
 ```bash
 make verify
 ```
@@ -62,6 +107,7 @@ You should see:
 ✓ Sim package installed
 ✓ Sim boots and emits valid telemetry
 ✓ Copilot auth module ready
+✓ SpecKit CLI installed
 ✓ All checks passed — see you at the workshop
 ```
 

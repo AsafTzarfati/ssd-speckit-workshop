@@ -2,7 +2,9 @@
 import asyncio
 import importlib.util
 import json
+import shutil
 import socket
+import subprocess
 import sys
 
 
@@ -78,6 +80,24 @@ def main() -> None:
     except Exception as e:
         fail("Copilot auth module ready", f"Could not import github_auth: {e}")
     print("✓ Copilot auth module ready")
+
+    if shutil.which("specify") is None:
+        fail(
+            "SpecKit CLI installed",
+            "Run: uv tool install specify-cli "
+            "--from git+https://github.com/github/spec-kit.git",
+        )
+    try:
+        subprocess.run(
+            ["specify", "version"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=10,
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+        fail("SpecKit CLI installed", f"`specify version` failed: {e}")
+    print("✓ SpecKit CLI installed")
 
     print("✓ All checks passed — see you at the workshop")
 

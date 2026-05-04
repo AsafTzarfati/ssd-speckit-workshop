@@ -1,30 +1,20 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/AsafTzarfati/ssd-speckit-workshop/specs/submission_schema.json",
-  "title": "Drone Watchdog Submission",
-  "description": "Schema for the JSON body POSTed to the leaderboard's /submit endpoint. Every student agent MUST produce an `answer` object that conforms to this schema. The leaderboard grades on the structural fields (numbers, sequences, fixed strings) — those are language-independent. Each pattern also accepts a free-text `label` field; the leaderboard normalizes it and matches against an alias dictionary, falling back to an LLM judge if configured — a few different phrasings of the same answer all score the same as long as your structural fields are correct. Submit findings for up to 4 hidden patterns. NOTE: The sim emits a *merged* telemetry stream — each WebSocket frame contains several nested per-scenario sub-objects plus top-level `drone_id`/`seq`/`ts`/`window_sha256`. Part of the workshop discipline is figuring out which sub-object hosts each pattern; not every sub-object is meaningful.",
+  "title": "Drone Watchdog Answer",
+  "description": "Schema for the contents of `answer.json` that you upload to the leaderboard. The file MUST contain ONLY this answer object — `name` and `department` go in the form fields next to the file picker; the leaderboard wraps `{name, department, answer: <your file>}` server-side. If you put a `name`/`department`/`answer` shell inside the file you will be double-wrapped and score 0 on every pattern. The leaderboard grades on the structural fields (numbers, sequences, fixed strings) — those are language-independent. Each pattern also accepts a free-text `label` field; the leaderboard normalizes it and matches against an alias dictionary, falling back to an LLM judge if configured — a few different phrasings of the same answer all score the same as long as your structural fields are correct. Submit findings for up to 4 hidden patterns. NOTE: the sim emits a *merged* telemetry stream — each WebSocket frame contains several nested per-scenario sub-objects plus top-level `drone_id`/`seq`/`ts`/`window_sha256`. Part of the workshop discipline is figuring out which sub-object hosts each pattern; not every sub-object is meaningful.",
   "type": "object",
-  "required": ["name", "department", "answer"],
   "additionalProperties": false,
+  "required": ["telemetry_window_sha256"],
   "properties": {
-    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
-    "department": { "type": "string", "minLength": 1, "maxLength": 80 },
-    "answer": {
-      "type": "object",
-      "description": "Findings for each of the up to 4 hidden patterns. Submit as many as you've solved — partial credit is awarded per pattern.",
-      "additionalProperties": false,
-      "required": ["telemetry_window_sha256"],
-      "properties": {
-        "pattern_1": { "$ref": "#/$defs/pattern_1" },
-        "pattern_2": { "$ref": "#/$defs/pattern_2" },
-        "pattern_3": { "$ref": "#/$defs/pattern_3" },
-        "pattern_4": { "$ref": "#/$defs/pattern_4" },
-        "telemetry_window_sha256": {
-          "type": "string",
-          "pattern": "^[a-f0-9]{64}$",
-          "description": "SHA-256 of the most recent 100-sample telemetry window. Read the field of the same name from any frame your agent received over the WebSocket once it has consumed at least 100 samples; copy it here. The leaderboard rejects submissions whose SHA the sim never emitted (with the workshop default seed=42 / rate=10 config)."
-        }
-      }
+    "pattern_1": { "$ref": "#/$defs/pattern_1" },
+    "pattern_2": { "$ref": "#/$defs/pattern_2" },
+    "pattern_3": { "$ref": "#/$defs/pattern_3" },
+    "pattern_4": { "$ref": "#/$defs/pattern_4" },
+    "telemetry_window_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 of the most recent 100-sample telemetry window. Read the field of the same name from any frame your agent received over the WebSocket once it has consumed at least 100 samples; copy it here. The leaderboard rejects submissions whose SHA the sim never emitted (with the workshop default seed=42 / rate=10 config)."
     }
   },
   "$defs": {
@@ -84,8 +74,8 @@
       "additionalProperties": true,
       "properties": {
         "label": { "type": "string", "description": "Free text naming the relationship you found." },
-        "source_field": { "type": "string", "description": "The driving telemetry field (use dotted-path notation including the sub-object, e.g. 'subobj.field' or 'subobj.field[i]')." },
-        "target_field": { "type": "string", "description": "The lagged-echo field (same notation as source_field)." },
+        "source_field": { "type": "string", "description": "The driving telemetry field, as a BARE field name (e.g. 'current_a'). Do NOT include the sub-object prefix — the grader expects just the field key inside whichever sub-object hosts this pattern." },
+        "target_field": { "type": "string", "description": "The lagged-echo field, as a BARE field name (e.g. 'motor_temp_c[0]'). Do NOT include the sub-object prefix." },
         "lag_samples": { "type": "integer", "description": "Lag at which cross-correlation peaks." },
         "gain": { "type": "number", "description": "Linear scaling factor: target ≈ const + gain · source[seq − lag]." }
       }

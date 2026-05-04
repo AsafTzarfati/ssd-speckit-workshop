@@ -124,18 +124,35 @@ The leaderboard's form collects your **name** and **department** as separate
 fields, then accepts the `answer` JSON two ways — pick whichever fits your
 runtime:
 
-- **Upload `answer.json`** — write the `answer` object to a file and upload it.
-- **Paste the JSON** — copy the `answer` object and paste it into the textarea.
+- **Upload `answer.json`** — write the answer block to a file and upload it.
+- **Paste the JSON** — paste the answer block into the textarea.
 
-Either way the body must match
-[`specs/submission_schema.json`](specs/submission_schema.json) — every team's
-agent emits the same shape so grading is fair across runs.
+> **Critical — do NOT include `name`, `department`, or an outer `answer`
+> wrapper inside the file.** The leaderboard collects those from the form
+> and wraps your file as the `answer` value server-side. A double-wrapped
+> file scores 0 on every pattern. The file must be exactly the shape in
+> [`specs/submission_schema.json`](specs/submission_schema.json) —
+> sketched here:
 
-Each pattern gets its own object inside `answer.pattern_N`. Numeric/structural
-fields are graded deterministically with tolerance bands. Each pattern also
-takes a free-text `label`; the leaderboard normalizes it and matches against
-an alias dictionary, so a few different phrasings all score the same as long
-as your structural fields are correct.
+```json
+{
+  "telemetry_window_sha256": "<64 hex chars>",
+  "pattern_1": { "label": "...", "bbox_width_m": 0, "bbox_height_m": 0,
+                 "center_lat": 0, "center_lon": 0, "components": ["..."] },
+  "pattern_2": { "label": "...", "peak_altitude_m": 0,
+                 "manual_takeover_seq": null, "alarm_event_seq": 0 },
+  "pattern_3": { "label": "...", "interval_seconds": [0, 0],
+                 "anomaly_seqs": [0, 0] },
+  "pattern_4": { "label": "...", "source_field": "...",
+                 "target_field": "...", "lag_samples": 0, "gain": 0 }
+}
+```
+
+Each pattern gets its own object at the top level (no wrapper). Numeric and
+structural fields are graded deterministically with tolerance bands. Each
+pattern also takes a free-text `label`; the leaderboard normalizes it and
+matches against an alias dictionary, so a few different phrasings all score
+the same as long as your structural fields are correct.
 
 Partial credit is awarded per pattern — submit what you've solved, skip what
 you haven't.
@@ -221,7 +238,7 @@ python -c "from github_auth import CopilotAuth; \
 
 ### Common errors
 
-Four ways the agent will silently misbehave if you're not paying attention:
+Six ways the agent will silently misbehave if you're not paying attention:
 
 1. **`400 The requested model is not supported`** — your Copilot
    subscription doesn't grant the model you asked for. The default in
@@ -244,6 +261,19 @@ Four ways the agent will silently misbehave if you're not paying attention:
    make sure not to emit a stray Python `None` that serializes to a
    different shape (e.g. JS `undefined` from a TypeScript port).
    Omitting the key entirely is also valid for optional fields.
+5. **Leaderboard scores 0 on every pattern even though your values
+   look right** — your `answer.json` has an outer
+   `{name, department, answer: {...}}` shell. The leaderboard's form
+   already collects `name` and `department` from text fields and wraps
+   your file as the `answer` value server-side, so a wrapped file
+   becomes `answer.answer.pattern_N` and the grader can't find any
+   patterns. The file must contain ONLY the inner answer block (top-
+   level keys: `pattern_1..4`, `telemetry_window_sha256`).
+6. **Pattern 4 `source_field`/`target_field` always score 0** — the
+   grader expects BARE field names (`current_a`, `motor_temp_c[0]`),
+   NOT the dotted-path form (`apollo11.current_a`). Strip the sub-
+   object prefix from the names you report; identify the sub-object
+   in your `label` instead.
 
 ## What NOT to do
 

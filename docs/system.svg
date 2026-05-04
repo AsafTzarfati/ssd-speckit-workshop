@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-59 -18 1007 630" font-family="-apple-system, system-ui, Segoe UI, sans-serif" role="img" aria-label="Drone Watchdog system">
+<defs>
+<marker id="arr-black" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1e1e1e"/></marker>
+<marker id="arr-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a9eed"/></marker>
+</defs>
+<rect x="-59" y="-18" width="1007" height="630" fill="#ffffff"/>
+<rect x="-29.0" y="171.0" width="140.0" height="80.0" rx="8" fill="#ffd8a8" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6,4"/>
+<rect x="240.0" y="110.0" width="380.0" height="340.0" rx="8" fill="#d0bfff" stroke="#8b5cf6" stroke-width="3"/>
+<rect x="260.0" y="215.0" width="170.0" height="50.0" rx="8" fill="#fff3bf" stroke="#f59e0b" stroke-width="2"/>
+<rect x="440.0" y="215.0" width="170.0" height="50.0" rx="8" fill="#fff3bf" stroke="#f59e0b" stroke-width="2"/>
+<rect x="260.0" y="280.0" width="170.0" height="50.0" rx="8" fill="#fff3bf" stroke="#f59e0b" stroke-width="2"/>
+<rect x="440.0" y="280.0" width="170.0" height="50.0" rx="8" fill="#fff3bf" stroke="#f59e0b" stroke-width="2"/>
+<rect x="788.0" y="146.0" width="130.0" height="80.0" rx="8" fill="#a5d8ff" stroke="#4a9eed" stroke-width="2" stroke-dasharray="6,4"/>
+<rect x="288.0" y="522.0" width="280.0" height="60.0" rx="8" fill="#eebefa" stroke="#ec4899" stroke-width="2" stroke-dasharray="6,4"/>
+<line x1="117.0" y1="212.6" x2="233.5" y2="228.2" stroke="#1e1e1e" stroke-width="2" marker-end="url(#arr-black)"/>
+<line x1="626.5" y1="219.4" x2="782.0" y2="190.2" stroke="#4a9eed" stroke-width="2" marker-start="url(#arr-blue)" marker-end="url(#arr-blue)"/>
+<line x1="428.7" y1="456.5" x2="428.3" y2="516.0" stroke="#1e1e1e" stroke-width="2" marker-end="url(#arr-black)"/>
+<text x="190.0" y="34.0" text-anchor="start" font-size="22" fill="#1e1e1e" font-weight="600"><tspan x="190.0">Drone Watchdog — What You&#x27;ll Build</tspan></text>
+<text x="41.0" y="206.5" text-anchor="middle" font-size="18" fill="#1e1e1e" font-weight="600"><tspan x="41.0">Sim</tspan><tspan x="41.0" dy="22">Drone</tspan></text>
+<text x="350.0" y="147.0" text-anchor="start" font-size="22" fill="#5b21b6" font-weight="600"><tspan x="350.0">Watchdog Agent</tspan></text>
+<text x="278.0" y="169.0" text-anchor="start" font-size="13" fill="#5b21b6"><tspan x="278.0">Microsoft agent-framework + GitHubCopilotAgent</tspan></text>
+<text x="345.0" y="245.2" text-anchor="middle" font-size="14" fill="#1e1e1e"><tspan x="345.0">@tool detect_pattern_1</tspan></text>
+<text x="525.0" y="245.2" text-anchor="middle" font-size="14" fill="#1e1e1e"><tspan x="525.0">@tool detect_pattern_2</tspan></text>
+<text x="345.0" y="310.2" text-anchor="middle" font-size="14" fill="#1e1e1e"><tspan x="345.0">@tool detect_pattern_3</tspan></text>
+<text x="525.0" y="310.2" text-anchor="middle" font-size="14" fill="#1e1e1e"><tspan x="525.0">@tool detect_pattern_4</tspan></text>
+<text x="278.0" y="364.0" text-anchor="start" font-size="14" fill="#5b21b6"><tspan x="278.0">the agent picks tools, talks to the LLM,</tspan></text>
+<text x="288.0" y="386.0" text-anchor="start" font-size="14" fill="#5b21b6"><tspan x="288.0">and assembles the final answer JSON</tspan></text>
+<text x="853.0" y="182.2" text-anchor="middle" font-size="15" fill="#1e1e1e"><tspan x="853.0">GitHub Copilot</tspan><tspan x="853.0" dy="19">(LLM, given)</tspan></text>
+<text x="428.0" y="548.2" text-anchor="middle" font-size="15" fill="#1e1e1e"><tspan x="428.0">Leaderboard</tspan><tspan x="428.0" dy="19">upload answer.json here</tspan></text>
+<text x="209.8" y="250.5" text-anchor="middle" font-size="14" fill="#1e1e1e"><tspan x="209.8">WebSocket</tspan></text>
+<text x="640.2" y="250.3" text-anchor="middle" font-size="14" fill="#4a9eed"><tspan x="640.2">LLM call</tspan></text>
+<text x="387.8" y="478.0" text-anchor="start" font-size="14" fill="#1e1e1e"><tspan x="387.8">answer JSON</tspan></text>
+</svg>

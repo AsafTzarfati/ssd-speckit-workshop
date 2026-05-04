@@ -15,7 +15,7 @@ the day, you'll lose the first 30 minutes of the session.
 ### 1. Tools you need
 - **Python 3.11 or newer** — check with `python --version`
 - **Git**
-- **VS Code or Cursor** with the GitHub Copilot extension installed
+- IDE with the GitHub Copilot extension installed
 - **GitHub Copilot** subscription with **agent mode** enabled
 - A working terminal — Linux or macOS
 
@@ -75,18 +75,10 @@ match [`specs/submission_schema.json`](specs/submission_schema.json) — every
 team's agent emits the same shape so grading is fair across runs.
 
 Each pattern gets its own object inside `answer.pattern_N`. Numeric/structural
-fields (bounding box, lag in samples, etc.) are graded deterministically
-with tolerance bands. Each pattern also takes a free-text `label`; the
-leaderboard normalizes it and matches against an alias dictionary, so
-descriptions like "Israeli flag", "Star of David", or "hexagram" all score
-the same as long as your structural fields are correct.
-
-> **Tip — Pattern 1 is a visual shape.** The sim emits a *merged stream*:
-> each frame carries 4 nested per-scenario sub-objects (`apollo11`, `flag`,
-> `heart`, `wright`). Plot lat vs lon for each sub-object — only one
-> traces a recognizable pattern; the other three are decoys. Look at the
-> trace before you try to label it. The `components` field expects
-> lowercase tokens for the sub-shapes you see (e.g. `stripes`, `hexagram`).
+fields are graded deterministically with tolerance bands. Each pattern also
+takes a free-text `label`; the leaderboard normalizes it and matches against
+an alias dictionary, so a few different phrasings all score the same as long
+as your structural fields are correct.
 
 Partial credit is awarded per pattern — submit what you've solved, skip what
 you haven't.
@@ -99,26 +91,16 @@ each diff before it's merged.
 
 ### Capturing telemetry
 
-The sim emits a **merged telemetry stream** — every WebSocket frame
-contains all 4 internal scenarios at once, nested under per-scenario
-keys:
+The sim emits a **merged telemetry stream** — each WebSocket frame is a
+JSON object with top-level metadata (`drone_id`, `seq`, `ts`,
+`window_sha256`) plus several nested sub-objects, each carrying its own
+per-tick telemetry (lat/lon, altitude, flight_mode, currents, motor temps,
+…). Inspect a frame to learn the exact keys.
 
-```json
-{
-  "drone_id": "uav-01", "seq": 137, "ts": 1714.7,
-  "apollo11": { "altitude_m": 134.0, "lat": ..., "flight_mode": "AUTO", ... },
-  "flag":     { "altitude_m": 60.0,  "lat": ..., "flight_mode": "AUTO", ... },
-  "heart":    { ... },
-  "wright":   { ... },
-  "window_sha256": "865c90e2..."
-}
-```
-
-Two of the four sub-objects (`heart`, `wright`) are decoys; figuring out
-which sub-object hosts each pattern is part of the workshop. The merged
-stream is **finite** (120s @ 10Hz = 1200 frames) and the simulator
-closes the websocket with `1001 going away` at the end. A naive read
-loop will crash on that. Use the helper we ship instead:
+Figuring out which sub-object hosts each pattern is part of the workshop —
+not every sub-object is meaningful. The stream is **finite** and the
+simulator closes the websocket with `1001 going away` at the end. A naive
+read loop will crash on that. Use the helper we ship instead:
 
 ```bash
 python scripts/capture.py --out telemetry.jsonl
@@ -136,9 +118,10 @@ client is wired to the Copilot API (via the `github_auth.py` module), so
 your `read:user` Copilot token is the only credential you need — no Azure
 / OpenAI key required.
 
-A runnable starting point lives in
-[`examples/watchdog_skeleton.py`](examples/watchdog_skeleton.py); copy it
-into your repo and grow it under your spec/plan. The shape is:
+A minimal starting point — just the wiring (auth, agent construction,
+permission handler) without any pattern-specific code — lives in
+[`examples/watchdog_skeleton.py`](examples/watchdog_skeleton.py). Copy it
+into your repo and grow the tools under your own spec/plan. The shape is:
 
 ```python
 from agent_framework import tool, Agent
@@ -149,22 +132,21 @@ auth = CopilotAuth()  # already logged in via `make login`
 # 1. Define Tools — pure analytical functions over the captured frames.
 #    The `@tool` decorator wraps the function as a FunctionTool the agent
 #    can call. Use `Annotated[..., "doc"]` to document parameters.
-#    Frames are nested per-scenario: f["flag"]["lat"], f["apollo11"]["altitude_m"], …
-@tool(name="detect_geospatial_shape",
-      description="Plot lat/lon for each sub-object, return bbox + components.")
-def detect_geospatial_shape(frames: list[dict]) -> dict: ...
+@tool(name="my_pattern_detector",
+      description="Inspect captured frames and return the structured findings your spec calls for.")
+def my_pattern_detector(frames: list[dict]) -> dict: ...
 
 # 2. Two ways to call a tool:
 #    a) directly (sync) — useful for tests / local analysis:
-#       result = detect_geospatial_shape.func(frames=frames)
+#       result = my_pattern_detector.func(frames=frames)
 #    b) via the agent (async, with arguments=) — used at run time:
-#       result = await detect_geospatial_shape.invoke(arguments={"frames": frames})
+#       result = await my_pattern_detector.invoke(arguments={"frames": frames})
 
-# 3. Wire the agent (full code in examples/watchdog_skeleton.py)
+# 3. Wire the agent
 watchdog = Agent(
     name="DroneWatchdog",
     instructions="...",
-    tools=[detect_geospatial_shape, ...],
+    tools=[my_pattern_detector, ...],
 )
 ```
 
@@ -172,14 +154,12 @@ Things the framework gives you for free that the spec should leverage:
 **streaming**, **checkpointing** (so a long capture isn't lost on a crash),
 and **human-in-the-loop** (confirm a borderline label before submitting).
 
-A worked example of the full agent path — capture, agent invocation,
-schema validation — lives in
-[`scripts/run_watchdog.py`](scripts/run_watchdog.py). Run it after
-`make login`:
+To list the models your Copilot account can call from the agent:
 
 ```bash
-python scripts/run_watchdog.py --list-models       # see what your account supports
-python scripts/run_watchdog.py --model gpt-5.2     # run end-to-end
+python -c "from github_auth import CopilotAuth; \
+  [print(m.id) for m in CopilotAuth().chat_client().list_models() \
+    if getattr(m, 'capabilities', None) and m.capabilities.type == 'chat']"
 ```
 
 ### Common errors
@@ -202,11 +182,11 @@ Four ways the agent will silently misbehave if you're not paying attention:
    anomaly suppresses 5 seconds of frames. If your read-loop's recv
    timeout is `<= 5s` it'll quit mid-cycle. `scripts/capture.py` uses
    10s; if you write your own loop, do at least the same.
-4. **Schema rejects `manual_takeover_seq: null`** — the field accepts
-   `integer | null`, but if you build the JSON by hand make sure not
-   to emit a stray Python `None` that serializes to a different shape
-   (e.g. JS `undefined` from a TypeScript port). Omitting the key
-   entirely is also valid.
+4. **Schema rejects a `null` on a nullable integer field** — some
+   fields are typed `integer | null`. If you build the JSON by hand
+   make sure not to emit a stray Python `None` that serializes to a
+   different shape (e.g. JS `undefined` from a TypeScript port).
+   Omitting the key entirely is also valid for optional fields.
 
 ## What NOT to do
 

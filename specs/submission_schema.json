@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/AsafTzarfati/ssd-speckit-workshop/specs/submission_schema.json",
   "title": "Drone Watchdog Submission",
-  "description": "Schema for the JSON body POSTed to the leaderboard's /submit endpoint. Every student agent MUST produce an `answer` object that conforms to this schema. The leaderboard grades on the structural fields (numbers, sequences, fixed strings) — those are language-independent. Each pattern also accepts a free-text `label` field; the leaderboard normalizes it and matches against an alias dictionary, falling back to an LLM judge if configured. So you can describe Pattern 1 as 'Israeli flag' OR 'Star of David' OR 'hexagram' — they all score the same as long as your structural fields are correct. Submit findings for up to 4 hidden patterns. NOTE: The sim emits a *merged* telemetry stream — each WebSocket frame contains 4 nested per-scenario sub-objects (`apollo11`, `flag`, `heart`, `wright`) plus top-level `drone_id`/`seq`/`ts`/`window_sha256`. Part of the workshop discipline is figuring out which sub-object hosts each pattern; `heart` and `wright` are decoys.",
+  "description": "Schema for the JSON body POSTed to the leaderboard's /submit endpoint. Every student agent MUST produce an `answer` object that conforms to this schema. The leaderboard grades on the structural fields (numbers, sequences, fixed strings) — those are language-independent. Each pattern also accepts a free-text `label` field; the leaderboard normalizes it and matches against an alias dictionary, falling back to an LLM judge if configured — a few different phrasings of the same answer all score the same as long as your structural fields are correct. Submit findings for up to 4 hidden patterns. NOTE: The sim emits a *merged* telemetry stream — each WebSocket frame contains several nested per-scenario sub-objects plus top-level `drone_id`/`seq`/`ts`/`window_sha256`. Part of the workshop discipline is figuring out which sub-object hosts each pattern; not every sub-object is meaningful.",
   "type": "object",
   "required": ["name", "department", "answer"],
   "additionalProperties": false,
@@ -34,7 +34,7 @@
       "description": "When you plot lat vs lon over the full flight, the trace forms a recognisable shape. Report the bounding box in metres, the geographic centre, the visual components you identified, and a free-text label.",
       "additionalProperties": true,
       "properties": {
-        "label": { "type": "string", "description": "Free text. Examples that all score full label credit: 'Israeli flag', 'Flag of Israel', 'Star of David', 'hexagram', 'Magen David'." },
+        "label": { "type": "string", "description": "Free text describing what the trace looks like." },
         "bbox_width_m": { "type": "number", "description": "Longitudinal extent of the path in metres (max_lon − min_lon, converted to metres at this latitude)." },
         "bbox_height_m": { "type": "number", "description": "Latitudinal extent of the path in metres." },
         "center_lat": { "type": "number" },
@@ -42,7 +42,7 @@
         "components": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "Visual sub-shapes you detected. Use lowercase tokens. Expected: ['stripes', 'hexagram']."
+          "description": "Visual sub-shapes you detected. Use lowercase tokens (e.g. 'circle', 'triangle', 'line')."
         }
       }
     },
@@ -52,10 +52,10 @@
       "description": "One scenario's altitude profile mimics a famous descent, with a programmed mode change and an injected anomaly that mirror landmarks of the original event.",
       "additionalProperties": true,
       "properties": {
-        "label": { "type": "string", "description": "Free text. E.g. 'Apollo 11 descent', 'Eagle landing', 'lunar landing'." },
+        "label": { "type": "string", "description": "Free text naming the historical event the profile mimics." },
         "peak_altitude_m": { "type": "number", "description": "Maximum altitude reached (metres)." },
-        "manual_takeover_seq": { "type": ["integer", "null"], "description": "Sample seq at which flight_mode flips to MANUAL. Null is accepted for short captures that didn't reach seq=1100." },
-        "alarm_event_seq": { "type": "integer", "description": "Sample seq of the famous alarm/anomaly (the equivalent of the 1202 program alarm)." }
+        "manual_takeover_seq": { "type": ["integer", "null"], "description": "Sample seq at which flight_mode flips to MANUAL. Null is accepted for short captures that didn't reach the takeover point." },
+        "alarm_event_seq": { "type": "integer", "description": "Sample seq of the injected alarm/anomaly that matches a famous landmark of the original event." }
       }
     },
     "pattern_3": {
@@ -64,16 +64,16 @@
       "description": "Anomalies don't fire at random — the gaps between them follow a famous integer sequence.",
       "additionalProperties": true,
       "properties": {
-        "label": { "type": "string", "description": "Free text. E.g. 'Fibonacci', 'Fibonacci sequence', 'fib'." },
+        "label": { "type": "string", "description": "Free text naming the integer sequence the gaps follow." },
         "interval_seconds": {
           "type": "array",
           "items": { "type": "number" },
-          "description": "Gaps in seconds between consecutive anomaly events. Expected: [1, 1, 2, 3, 5, 8, 13, 21]."
+          "description": "Gaps in seconds between consecutive anomaly events, in order."
         },
         "anomaly_seqs": {
           "type": "array",
           "items": { "type": "integer" },
-          "description": "Sample seq of each anomaly. At 10 Hz, expected: [10, 20, 40, 70, 120, 200, 330, 540]."
+          "description": "Sample seq of each anomaly, in order."
         }
       }
     },
@@ -83,9 +83,9 @@
       "description": "One telemetry channel is a lagged, scaled echo of another. Identify the source, the target, the lag in samples, and the gain.",
       "additionalProperties": true,
       "properties": {
-        "label": { "type": "string", "description": "Free text. E.g. 'lagged correlation', 'thermal lag', 'cross-correlation echo'." },
-        "source_field": { "type": "string", "description": "The driving telemetry field (e.g., 'current_a')." },
-        "target_field": { "type": "string", "description": "The lagged-echo field (e.g., 'motor_temp_c[0]')." },
+        "label": { "type": "string", "description": "Free text naming the relationship you found." },
+        "source_field": { "type": "string", "description": "The driving telemetry field (use dotted-path notation including the sub-object, e.g. 'subobj.field' or 'subobj.field[i]')." },
+        "target_field": { "type": "string", "description": "The lagged-echo field (same notation as source_field)." },
         "lag_samples": { "type": "integer", "description": "Lag at which cross-correlation peaks." },
         "gain": { "type": "number", "description": "Linear scaling factor: target ≈ const + gain · source[seq − lag]." }
       }

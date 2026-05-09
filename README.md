@@ -31,6 +31,10 @@ cd ssd-speckit-workshop
 pip install -e ".[dev]"
 ```
 
+> All workshop commands run through `python tasks.py <command>` — works
+> identically on macOS, Linux, and Windows (no `make` required). See
+> `python tasks.py --help` for the full list.
+
 This installs Microsoft's [agent-framework](https://github.com/microsoft/agent-framework)
 (`pip install agent-framework`) as the runtime for your Watchdog. You'll define the
 Watchdog as an `Agent` with `Tool`s for telemetry analysis, and orchestrate the
@@ -85,7 +89,7 @@ token is saved locally to `.copilot_token.json` (gitignored) so you won't
 be prompted again.
 
 ```bash
-make login
+python tasks.py login
 ```
 
 You'll be shown a code and a URL. Open the URL in your browser, paste the
@@ -94,11 +98,11 @@ done.
 
 > Requires an active GitHub Copilot subscription (Individual, Business, or
 > Enterprise). If you already have `GITHUB_TOKEN` set in your environment
-> with `read:user` scope, that's used automatically and `make login` is a no-op.
+> with `read:user` scope, that's used automatically and `python tasks.py login` is a no-op.
 
 ### 5. Verify your setup
 ```bash
-make verify
+python tasks.py verify
 ```
 
 You should see:
@@ -201,7 +205,7 @@ into your repo and grow the tools under your own spec/plan. The shape is:
 from agent_framework import tool, Agent
 from github_auth import CopilotAuth
 
-auth = CopilotAuth()  # already logged in via `make login`
+auth = CopilotAuth()  # already logged in via `python tasks.py login`
 
 # 1. Define Tools — pure analytical functions over the captured frames.
 #    The `@tool` decorator wraps the function as a FunctionTool the agent

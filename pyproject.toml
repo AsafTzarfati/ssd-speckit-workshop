@@ -4,10 +4,11 @@ version = "0.1.0"
 description = "Spec-Driven Development workshop — student scaffolding"
 requires-python = ">=3.11"
 dependencies = [
-    # The package distributed by ssd-workshop-sim-drone is named `sim` (not
-    # `sim-drone`). Pinned to a tag so all students get an identical wire shape
-    # regardless of when they cloned during the workshop window.
-    "sim @ git+https://github.com/AsafTzarfati/ssd-workshop-sim-drone.git@v0.2.0",
+    # Distributed as a wheel (not a git+ clone) so the sim source does not land
+    # in a sibling working copy at a guessable path. The sim is a black box —
+    # students must derive pattern findings from telemetry only. Agent-facing
+    # rules live in .github/copilot-instructions.md.
+    "sim @ https://github.com/AsafTzarfati/ssd-workshop-sim-drone/releases/download/v0.2.0/sim-0.2.0-py3-none-any.whl",
     "websockets>=12.0",
     "requests>=2.31",
     "agent-framework>=0.1.0",

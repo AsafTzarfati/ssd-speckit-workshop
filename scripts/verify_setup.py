@@ -65,6 +65,21 @@ def main() -> None:
         fail("Sim package installed", 'Run: pip install -e ".[dev]"')
     print("✓ Sim package installed")
 
+    # Black-box discipline: the sim must come from the wheel, not a sibling
+    # editable checkout. An editable install leaves a __editable__.sim-*.pth
+    # file pointing at readable .py source — which lets a coding agent extract
+    # pattern answers without doing the analysis. Reject that state.
+    import sysconfig
+    from pathlib import Path
+    site = Path(sysconfig.get_paths()["purelib"])
+    if list(site.glob("__editable__.sim-*.pth")) or list(site.glob("__editable___sim_*.pth")):
+        fail(
+            "Sim installed as wheel (not editable)",
+            "Editable sim install detected. Run: "
+            'pip uninstall -y sim && pip install -e ".[dev]"',
+        )
+    print("✓ Sim installed as wheel (not editable)")
+
     try:
         asyncio.run(boot_and_read(free_port()))
     except Exception as e:

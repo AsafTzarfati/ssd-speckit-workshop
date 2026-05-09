@@ -277,9 +277,13 @@ Six ways the agent will silently misbehave if you're not paying attention:
 
 ## What NOT to do
 
-- **Don't read the simulator's source code.** The sim is a black-box dependency.
-  Part of the workshop's discipline is using analysis — not source-reading —
-  to understand what the system is emitting.
+- **Don't read the simulator's source code.** The sim is a black-box dependency
+  — installed as a wheel into `.venv/lib/.../site-packages/sim/`, with no
+  sibling source checkout. Reading those files (or `grep`-ing them) to extract
+  pattern answers is cheating. The same rule is encoded for your agent in
+  [`.github/copilot-instructions.md`](.github/copilot-instructions.md);
+  Copilot will refuse if asked. Part of the workshop's discipline is using
+  analysis — not source-reading — to understand what the system is emitting.
 - **Don't write Watchdog code by hand.** The agent writes it. You drive the
   spec and review the output. That's the muscle this workshop is building.
 - **Don't pre-write your constitution or spec.** We do that together, live.
